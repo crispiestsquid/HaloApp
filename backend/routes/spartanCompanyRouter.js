@@ -1,6 +1,7 @@
+import { getCompany } from './utils/companyInfo.js';
+
 const express = require('express');
 const axios = require('axios');
-
 const spartanCompanyRouter = express.Router();
 
 spartanCompanyRouter.route('/')
@@ -8,6 +9,7 @@ spartanCompanyRouter.route('/')
     res.statusCode = 200;
     res.setHeader('Content-Type', 'text/html');
     res.end('<body><h1>Hello World!</h1></body>');
+    getCompany('CrankiestSeeker')
 });
 
 spartanCompanyRouter.route('/:companyName')
