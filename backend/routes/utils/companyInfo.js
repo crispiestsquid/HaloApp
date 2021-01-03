@@ -7,6 +7,22 @@ axios.defaults.headers = {
 	'Ocp-Apim-Subscription-Key': api_key
 }
 
+// Get Company Commendation Progress based on gamertag or Company ID 
+const getCompanyComm = async (gamertag, company_id = null) => {
+	if (!company_id) {
+		let data = await getCompany(gamertag);
+		company_id = data.company.Id;
+	}
+	let response = await axios.get(`${halo_api}/stats/h5/companies/${company_id}/commendations`)
+	.then (res => {
+		return res.data;
+	})
+	.catch( error => {
+		return error;
+	});
+	return response
+}
+
 // Get Company Information based on a Gamertag or Company ID
 const getCompanyInfo = async (gamertag, company_id = null) => {
 	if (!company_id) {
@@ -35,4 +51,4 @@ const getCompany = async gamertag => {
 	return response;
 }
 
-module.exports = { getCompany, getCompanyInfo }
+module.exports = { getCompany, getCompanyInfo, getCompanyComm };
