@@ -19,8 +19,14 @@ const getCustomMetadata = async () => {
 
 // Get Progress to Achilles Helmet
 const getHelmetProg = async (commendations) => { 
-	company_metadata = require(metadata_path);
-	console.log(company_metadata)
+	let company_metadata = require(metadata_path);
+	//let helmet_id = company_metadata["The sum is greater than the parts"].id;
+	let requiredCommendations = company_metadata.filter(item => );
+	let required_comms = (commendations["ProgressiveCommendations"]).filter(item => item.CompletedLevels.length < 5);
+	let completed_comms = (commendations["ProgressiveCommendations"]).filter(item => item.CompletedLevels.length == 5);
+	console.log(required_comms.length);
+	console.log(completed_comms.length);
+
 }
 
 // Get progress to Achilles Armor
