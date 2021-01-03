@@ -1,3 +1,6 @@
+// Require dotenv to allow .env vars
+require('dotenv').config({ path: `${__dirname}/.env` });
+
 const createError = require('http-errors');
 const express = require('express');
 const path = require('path');
