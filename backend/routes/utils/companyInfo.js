@@ -7,20 +7,9 @@ axios.defaults.headers = {
        'Ocp-Apim-Subscription-Key': api_key
    }
 
-def getCompanyInfo(conn,headers,company_id):
-    try:
-        conn.request("GET", "/stats/h5/companies/%s" % company_id, "{body}", headers)
-        response = conn.getresponse()
-        string = response.read().decode('utf-8')
-        json_obj = json.loads(string)
-        return json_obj
-    except Exception as e:
-        print("Unable to perform REQUEST")
-        print(e)
-        sys.exit(1)
-
-
-exports.getCompanyInfo = async company_id => {
+const getCompanyInfo = async player => {
+    let data = await getCompany(player);
+    let company_id = data.Company.Id;
     let response = await axios.get(`${halo_api}/stats/h5/companies/${company_id}`)
 	.then(res => {
 	    return res.data;
@@ -32,7 +21,7 @@ exports.getCompanyInfo = async company_id => {
 }
 
 // Get Company Object based on a Gamertag
-exports.getCompany = async player => {
+const getCompany = async player => {
     let response = await axios.get(`${halo_api}/profile/h5/profiles/${player}/appearance`)
 	.then(res => {
 	    return res.data;
@@ -42,3 +31,5 @@ exports.getCompany = async player => {
 	})
     return response;
 }
+
+module.exports = { getCompany,getCompanyInfo }

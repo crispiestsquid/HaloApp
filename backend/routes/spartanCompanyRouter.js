@@ -9,7 +9,7 @@ spartanCompanyRouter.route('/')
     res.setHeader('Content-Type', 'text/html');
     res.end('<body><h1>Hello World!</h1></body>');
     try { 
-        const test = await spartanCompanyUtils.getCompany("CrankiestSee");
+        const test = await spartanCompanyUtils.getCompanyInfo("CrankiestSeeker");
         console.log(test);
     } catch(Error) {
         console.log(Error)
