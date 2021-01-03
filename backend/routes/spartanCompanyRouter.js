@@ -1,15 +1,14 @@
-import { getCompany } from './utils/companyInfo.js';
-
 const express = require('express');
 const axios = require('axios');
+const spartanCompanyUtils = require('./utils/companyInfo');
 const spartanCompanyRouter = express.Router();
 
 spartanCompanyRouter.route('/')
 .get((req, res, next) => {
+    console.log("Calling API");
     res.statusCode = 200;
     res.setHeader('Content-Type', 'text/html');
     res.end('<body><h1>Hello World!</h1></body>');
-    getCompany('CrankiestSeeker')
 });
 
 spartanCompanyRouter.route('/:companyName')
