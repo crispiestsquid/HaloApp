@@ -17,25 +17,10 @@ const getCustomMetadata = async () => {
 	// TODO: Placeholder for custom metadata we may add
 }
 
-const getMetadata = async () => {
-	// Get metadata from Halo API
-	let response = await axios.get(`${halo_api}/metadata/h5/metadata/company-commendations`)
-	.then ( res => {
-		return res.data;
-	})
-	.catch( error => {
-		return error;
-	});
-	fs.writeFile('./metadata/halo_company_comm_metadata.json', response);
-}
-
 // Get Progress to Achilles Helmet
 const getHelmetProg = async (commendations) => { 
-	// Check for Metadata
-	if !(fs.existsSync(metadata_path)) {
-		await getMetadata();
-	};
-	const company_metadata = require(metadata_path);
+	company_metadata = require(metadata_path);
+	console.log(company_metadata)
 }
 
 // Get progress to Achilles Armor
@@ -47,7 +32,7 @@ const getArmorProg = async (commendations) => {
 const getCompanyComm = async (gamertag, company_id = null) => {
 	if (!company_id) {
 		let data = await getCompany(gamertag);
-		company_id = data.company.Id;
+		company_id = data.Company.Id;
 	}
 	let response = await axios.get(`${halo_api}/stats/h5/companies/${company_id}/commendations`)
 	.then (res => {
@@ -63,7 +48,7 @@ const getCompanyComm = async (gamertag, company_id = null) => {
 const getCompanyInfo = async (gamertag, company_id = null) => {
 	if (!company_id) {
 		let data = await getCompany(gamertag);
-		company_id = await data.Company.Id;
+		company_id = data.Company.Id;
 	}
 	let response = await axios.get(`${halo_api}/stats/h5/companies/${company_id}`)
 	.then(res => {
@@ -87,4 +72,4 @@ const getCompany = async gamertag => {
 	return response;
 }
 
-module.exports = { getCompany, getCompanyInfo, getCompanyComm };
+module.exports = { getCompany, getCompanyInfo, getCompanyComm, getHelmetProg };
