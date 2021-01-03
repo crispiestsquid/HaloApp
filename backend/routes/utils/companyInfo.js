@@ -1,10 +1,46 @@
 const axios = require('axios');
-const halo_api = "https://www.haloapi.com"
+const fs = require('fs');
+const halo_api = "https://www.haloapi.com";
 const api_key = process.env.HALO_API_KEY;
+const metadata_path = "./metadata/halo_company_comm_metadata.json";
 
 axios.defaults.headers = {
 	'Content-Type': 'application/json',
 	'Ocp-Apim-Subscription-Key': api_key
+}
+
+const getCustomComm = async () => {
+	// TODO: Placeholder for custom commendations we may add
+}
+
+const getCustomMetadata = async () => {
+	// TODO: Placeholder for custom metadata we may add
+}
+
+const getMetadata = async () => {
+	// Get metadata from Halo API
+	let response = await axios.get(`${halo_api}/metadata/h5/metadata/company-commendations`)
+	.then ( res => {
+		return res.data;
+	})
+	.catch( error => {
+		return error;
+	});
+	fs.writeFile('./metadata/halo_company_comm_metadata.json', response);
+}
+
+// Get Progress to Achilles Helmet
+const getHelmetProg = async (commendations) => { 
+	// Check for Metadata
+	if !(fs.existsSync(metadata_path)) {
+		await getMetadata();
+	};
+	const company_metadata = require(metadata_path);
+}
+
+// Get progress to Achilles Armor
+const getArmorProg = async (commendations) => { 
+	// Check for Metadata
 }
 
 // Get Company Commendation Progress based on gamertag or Company ID 
