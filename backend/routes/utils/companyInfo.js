@@ -1,8 +1,9 @@
 const axios = require('axios');
 const fs = require('fs');
+const achillesCommendations = require(`${__dirname}/statics/achilles_commendations.js`)
+const metadata_path = `${__dirname}/metadata/halo_company_comm_metadata.json`;
 const halo_api = "https://www.haloapi.com";
 const api_key = process.env.HALO_API_KEY;
-const metadata_path = `${__dirname}/metadata/halo_company_comm_metadata.json`;
 
 axios.defaults.headers = {
 	'Content-Type': 'application/json',
@@ -17,21 +18,47 @@ const getCustomMetadata = async () => {
 	// TODO: Placeholder for custom metadata we may add
 }
 
-// Get Progress to Achilles Helmet
-const getHelmetProg = async (commendations) => { 
+// Get Progress to Achilles
+const getAchillesProg = async (commendations,milestone = 'helmet') => { 
 	let company_metadata = require(metadata_path);
-	//let helmet_id = company_metadata["The sum is greater than the parts"].id;
-	let requiredCommendations = company_metadata.filter(item => );
-	let required_comms = (commendations["ProgressiveCommendations"]).filter(item => item.CompletedLevels.length < 5);
-	let completed_comms = (commendations["ProgressiveCommendations"]).filter(item => item.CompletedLevels.length == 5);
-	console.log(required_comms.length);
-	console.log(completed_comms.length);
+	let requiredCommendations = [];
+	let nameIdMap = {};
+	let offset = 1
 
-}
+	if (milestone != 'helmet'){
+		offset = 3;
+	}
 
-// Get progress to Achilles Armor
-const getArmorProg = async (commendations) => { 
-	// Check for Metadata
+	// filter only to relevant Achilles commendations
+	for (i = 0; i < achillesCommendations.length; i++) {
+		let achillesComm = achillesCommendations[i];
+		// Our metadata usesnames as keys; this is to keep track of id -> name mappings; used later
+		nameIdMap[company_metadata[achillesComm]['id']] = achillesComm;
+		requiredCommendations.push(commendations['ProgressiveCommendations'].filter(item => item.Id == company_metadata[achillesComm]['id'])[0]);
+	}
+
+	// Separate completed commendations and still needed
+	let completedCommendations = [];
+	let neededCommendations = [];
+	for (i = 0; i < requiredCommendations.length; i++) {
+		let comm = requiredCommendations[i];
+		let commName = nameIdMap[comm.Id];
+		let achillesComm = company_metadata[commName];
+		// Curate our returned data somewhat; Ignore levels of commendations
+		let data = {
+			"Name": commName,
+			"Progress": comm.Progress,
+			"Id": comm.Id,
+			"Threshold": achillesComm.levels[achillesComm.levels.length - offset].threshold
+		}
+		if (data.Progress < data.Threshold) {
+			neededCommendations.push(data);
+		} else {
+			completedCommendations.push(data);
+		}
+	};
+	console.log(neededCommendations.length);
+	return {'neededCommendations': neededCommendations, 'completedCommendations': completedCommendations};
 }
 
 // Get Company Commendation Progress based on gamertag or Company ID 
@@ -47,7 +74,7 @@ const getCompanyComm = async (gamertag, company_id = null) => {
 	.catch( error => {
 		return error;
 	});
-	return response
+	return response;
 }
 
 // Get Company Information based on a Gamertag or Company ID
@@ -78,4 +105,4 @@ const getCompany = async gamertag => {
 	return response;
 }
 
-module.exports = { getCompany, getCompanyInfo, getCompanyComm, getHelmetProg };
+module.exports = { getCompany, getCompanyInfo, getCompanyComm, getAchillesProg };
