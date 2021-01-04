@@ -1,6 +1,6 @@
 const axios = require('axios');
 const halo_api = "https://www.haloapi.com"
-const api_key = require('../../config').haloApiKey;
+const api_key = require(`${__dirname}/../../config`).haloApiKey;
 
 axios.defaults.headers = {
 	'Content-Type': 'application/json',
