@@ -1,4 +1,4 @@
-export let achillesCommendations = [
+let achillesCommendations = [
 	"Sting like a bee",
 	"Grand Theft",
 	"Kicking it Old School",
@@ -30,4 +30,5 @@ export let achillesCommendations = [
 	"Body Guard",
 	"Can't we get along?",
 	"Deconstructed",
-]
+];
+ module.exports = achillesCommendations;
