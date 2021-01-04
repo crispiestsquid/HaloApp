@@ -2,7 +2,7 @@ const axios = require('axios');
 const fs = require('fs');
 const halo_api = "https://www.haloapi.com";
 const api_key = process.env.HALO_API_KEY;
-const metadata_path = "./metadata/halo_company_comm_metadata.json";
+const metadata_path = `${__dirname}/metadata/halo_company_comm_metadata.json`;
 
 axios.defaults.headers = {
 	'Content-Type': 'application/json',
