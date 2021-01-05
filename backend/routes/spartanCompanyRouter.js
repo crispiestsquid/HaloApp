@@ -1,5 +1,4 @@
 const express = require('express');
-const axios = require('axios');
 const spartanCompanyUtils = require('./utils/companyInfo');
 
 const spartanCompanyRouter = express.Router();
@@ -12,8 +11,8 @@ spartanCompanyRouter.route('/with-gamertag/:gamertag')
         res.statusCode = 200;
         res.setHeader('Content-Type', 'application/json');
         res.json({'company': spartanCompany, 'commendations': spartanCompanyCommendations});
-	spartanCompanyUtils.getAchillesProg(spartanCompanyCommendations);
-	//spartanCompanyUtils.getAchillesProg(spartanCompanyCommendations,"armor");
+        // spartanCompanyUtils.getAchillesProg(spartanCompanyCommendations);
+        // spartanCompanyUtils.getAchillesProg(spartanCompanyCommendations,"armor");
     } catch (err) {
         next(err);
     }

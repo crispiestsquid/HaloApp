@@ -12,6 +12,7 @@ const usersRouter = require('./routes/users');
 
 // Created Routes
 const spartanCompanyRouter = require('./routes/spartanCompanyRouter');
+const playerEmblemRouter = require('./routes/playerEmblemRouter');
 
 const app = express();
 
@@ -29,6 +30,7 @@ app.use('/', indexRouter);
 app.use('/users', usersRouter);
 
 app.use('/spartan-company', spartanCompanyRouter);
+app.use('/player-emblem', playerEmblemRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

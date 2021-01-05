@@ -31,4 +31,5 @@ let achillesCommendations = [
 	"Can't we get along?",
 	"Deconstructed",
 ];
- module.exports = achillesCommendations;
+
+module.exports = achillesCommendations;

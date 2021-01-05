@@ -1,29 +1,27 @@
 const axios = require('axios');
-const fs = require('fs');
-const achillesCommendations = require(`${__dirname}/statics/achilles_commendations.js`)
-const metadata_path = `${__dirname}/metadata/halo_company_comm_metadata.json`;
+const achillesCommendations = require('./statics/achilles_commendations');
+const company_metadata = require('./metadata/halo_company_comm_metadata.json');
 const halo_api = "https://www.haloapi.com";
-const api_key = process.env.HALO_API_KEY;
+const api_key = require('../../config').haloApiKey;
 
 axios.defaults.headers = {
 	'Content-Type': 'application/json',
 	'Ocp-Apim-Subscription-Key': api_key
-}
+};
 
 const getCustomComm = async () => {
 	// TODO: Placeholder for custom commendations we may add
-}
+};
 
 const getCustomMetadata = async () => {
 	// TODO: Placeholder for custom metadata we may add
-}
+};
 
 // Get Progress to Achilles
-const getAchillesProg = async (commendations,milestone = 'helmet') => { 
-	let company_metadata = require(metadata_path);
+const getAchillesProg = async (commendations, milestone = 'helmet') => {
 	let requiredCommendations = [];
 	let nameIdMap = {};
-	let offset = 1
+	let offset = 1;
 
 	if (milestone != 'helmet'){
 		offset = 3;
@@ -32,7 +30,7 @@ const getAchillesProg = async (commendations,milestone = 'helmet') => {
 	// filter only to relevant Achilles commendations
 	for (i = 0; i < achillesCommendations.length; i++) {
 		let achillesComm = achillesCommendations[i];
-		// Our metadata usesnames as keys; this is to keep track of id -> name mappings; used later
+		// Our metadata uses names as keys; this is to keep track of id -> name mappings; used later
 		nameIdMap[company_metadata[achillesComm]['id']] = achillesComm;
 		requiredCommendations.push(commendations['ProgressiveCommendations'].filter(item => item.Id == company_metadata[achillesComm]['id'])[0]);
 	}
@@ -59,7 +57,7 @@ const getAchillesProg = async (commendations,milestone = 'helmet') => {
 	};
 	console.log(neededCommendations.length);
 	return {'neededCommendations': neededCommendations, 'completedCommendations': completedCommendations};
-}
+};
 
 // Get Company Commendation Progress based on gamertag or Company ID 
 const getCompanyComm = async (gamertag, company_id = null) => {
@@ -75,7 +73,7 @@ const getCompanyComm = async (gamertag, company_id = null) => {
 		return error;
 	});
 	return response;
-}
+};
 
 // Get Company Information based on a Gamertag or Company ID
 const getCompanyInfo = async (gamertag, company_id = null) => {
@@ -91,7 +89,7 @@ const getCompanyInfo = async (gamertag, company_id = null) => {
 		return error;
 	});
 	return response;
-}
+};
 
 // Get Company Object based on a Gamertag
 const getCompany = async gamertag => {
@@ -103,6 +101,6 @@ const getCompany = async gamertag => {
 		return error;
 	});
 	return response;
-}
+};
 
 module.exports = { getCompany, getCompanyInfo, getCompanyComm, getAchillesProg };
