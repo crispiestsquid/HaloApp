@@ -1,4 +1,5 @@
 const axios = require('axios');
+const axiosRetry = require('axios-retry');
 const fs = require('fs');
 const achillesCommendations = require(`${__dirname}/statics/achilles_commendations.js`)
 const metadata_path = `${__dirname}/metadata/halo_company_comm_metadata.json`;
@@ -10,12 +11,66 @@ axios.defaults.headers = {
 	'Ocp-Apim-Subscription-Key': api_key
 }
 
+axiosRetry(axios, {
+   retries: 3, // number of retries
+   retryDelay: (retryCount) => {
+     console.log(`retry attempt: ${retryCount}`);
+     return retryCount * 10000; // time interval between retries
+   },
+   retryCondition: (error) => {
+     // if retry condition is not specified, by default idempotent requests are retried
+     return error.response.status === 503;
+   },
+});
+
 const getCustomComm = async () => {
 	// TODO: Placeholder for custom commendations we may add
 }
 
 const getCustomMetadata = async () => {
 	// TODO: Placeholder for custom metadata we may add
+}
+
+// Return list of games in the past week
+const getPlayerGames = async (player,increment=0,validGames=[]) => {
+	let response = await axios.get(`${halo_api}/stats/h5/players/${player}/matches?modes=arena,warzone&include-times=true&start=${increment}`)
+        .then (res => {
+                return res.data;
+        })
+        .catch( error => {
+		console.log("error")
+                return error;
+        });
+
+
+	// Filter only games that occurred within previous week
+	let counter = 0;
+	for (i = 0; i < response.Results.length; i++){
+		candidate = response.Results[i]
+		let d = new Date();
+		let sevenDaysAgo = d.setDate(d.getDate() - 7);
+		sevenDaysAgo = new Date(sevenDaysAgo).toISOString();
+		if (new Date(candidate.MatchCompletedDate.ISO8601Date) > new Date(sevenDaysAgo)){
+			console.log(new Date(candidate.MatchCompletedDate.ISO8601Date))
+			validGames.push(candidate);
+			counter++;
+		}
+	}
+	// Can only grab 25 games at a time; Keep checking until all valid games are examined (i.e. less than 25 are returned)
+	if (counter == 25){
+		return getPlayerGames(player,increment+25,validGames);
+	} else {
+		return validGames;
+	}
+}
+
+const getPlayerContribs = async (players) => {
+	let playerJson = {};
+	for (i = 0; i < players.length; i++){
+		let player = players[i].Player.Gamertag;
+		let playerGames = await getPlayerGames(player);
+	}
+
 }
 
 // Get Progress to Achilles
@@ -105,4 +160,4 @@ const getCompany = async gamertag => {
 	return response;
 }
 
-module.exports = { getCompany, getCompanyInfo, getCompanyComm, getAchillesProg };
+module.exports = { getCompany, getCompanyInfo, getCompanyComm, getAchillesProg, getPlayerContribs };
