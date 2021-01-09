@@ -9,18 +9,6 @@ axios.defaults.headers = {
 	'Ocp-Apim-Subscription-Key': api_key
 };
 
-axiosRetry(axios, {
-   retries: 3, // number of retries
-   retryDelay: (retryCount) => {
-     console.log(`retry attempt: ${retryCount}`);
-     return retryCount * 10000; // time interval between retries
-   },
-   retryCondition: (error) => {
-     // if retry condition is not specified, by default idempotent requests are retried
-     return error.response.status === 503;
-   },
-});
-
 const getCustomComm = async () => {
 	// TODO: Placeholder for custom commendations we may add
 };
@@ -43,12 +31,13 @@ const getPlayerGames = async (player,increment=0,validGames=[]) => {
 
 	// Filter only games that occurred within previous week
 	let counter = 0;
-	for (i = 0; i < response.Results.length; i++){
-		candidate = response.Results[i]
+	for (j = 0; j < response.Results.length; j++){
+		candidate = response.Results[j]
 		let d = new Date();
 		let sevenDaysAgo = d.setDate(d.getDate() - 7);
 		sevenDaysAgo = new Date(sevenDaysAgo).toISOString();
 		if (new Date(candidate.MatchCompletedDate.ISO8601Date) > new Date(sevenDaysAgo)){
+			console.log(player)
 			console.log(new Date(candidate.MatchCompletedDate.ISO8601Date))
 			validGames.push(candidate);
 			counter++;
@@ -65,6 +54,7 @@ const getPlayerGames = async (player,increment=0,validGames=[]) => {
 const getPlayerContribs = async (players) => {
 	let playerJson = {};
 	for (i = 0; i < players.length; i++){
+		console.log(i)
 		let player = players[i].Player.Gamertag;
 		let playerGames = await getPlayerGames(player);
 	}
