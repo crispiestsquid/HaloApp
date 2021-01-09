@@ -1,6 +1,6 @@
 const express = require('express');
-const axios = require('axios');
 const spartanCompanyUtils = require('./utils/companyInfo');
+
 const spartanCompanyRouter = express.Router();
 
 spartanCompanyRouter.route('/with-gamertag/:gamertag')
