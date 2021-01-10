@@ -1,7 +1,7 @@
 const axios = require('../../utils/axios-helper');
-const achillesCommendations = require('./statics/achilles_commendations');
 const company_metadata = require('./metadata/halo_company_comm_metadata.json');
 const halo_api = "https://www.haloapi.com";
+const static_things = require('./statics/achilles_commendations');
 
 const getCustomComm = async () => {
 	// TODO: Placeholder for custom commendations we may add
@@ -61,18 +61,46 @@ const getMatchResults = async (game) => {
 		})
 	
 	} else {
-		return {}
+		return "error"
 	}
 }
 
 // Return JSON object of how much contribution a player has made in a game towards achilles commendations
 const getGameContribs = async (game,player) => {
-	//Placeholder
-	//For every medal earned by player
-	//	For every achilles commendation
-	//		if player medal contributes to commendation
-	//			increment count by 1 or init to 1
-	//Return JSON of counts
+	let matchResults = await getMatchResults(game);
+	matchResults = matchResults.PlayerStats;
+	// Filter results to just target player
+	let playerResults = matchResults.reduce((total,currentPlayer) => {
+		if (currentPlayer.Player.Gamertag == player) {
+			return currentPlayer;
+		};
+		return total
+	});
+
+	// Initialize dictionary
+	let localAchilles = {}
+	static_things.achillesCommendations.forEach((item) => { localAchilles[item] = 0});
+
+	// Get achilles contribution by medals
+	playerResults["MedalAwards"].forEach((medal) => {
+		if (medal.MedalId in static_things.achillesMedals){
+			localAchilles[static_things.achillesMedals[medal.MedalId]] += medal['Count'];
+		}
+	});
+
+	// Get achilles contribution by stats
+	for (let key in static_things.achillesStats){
+		localAchilles[static_things.achillesStats[key]] += playerResults[key]
+	};
+
+	//// Get achilles contribution by commendations
+	playerResults["ProgressiveCommendationDeltas"].forEach((delta) => {
+		if (delta.Id in static_things.achillesCommDeltas){
+			localAchilles[static_things.achillesCommDeltas[delta.Id]] += delta["Progress"] - delta["PreviousProgress"];
+		}
+	});
+	
+	return localAchilles;
 }
 
 // Return JSON object of player contributions
@@ -81,13 +109,27 @@ const getPlayerContribs = async (players) => {
 	for (i = 0; i < players.length; i++){
 		let player = players[i].Player.Gamertag;
 		let playerGames = await getPlayerGames(player);
-		console.log(playerGames)
 		playerJson[player] = {'Games': playerGames};
+		playerJson[player]['Contributions'] = {};
+		// initialize playerContributions dictionary
+		static_things.achillesCommendations.forEach((item) => { playerJson[player]['Contributions'][item] = 0});
+		gameCalls = []
+		playerGames.forEach(game => { 
+			gameCalls.push(getGameContribs(game,player));
+		});
+
+		await Promise.allSettled(gameCalls)
+		.then(results => {
+			results.forEach((result) => {
+				if (result.status === "fulfilled"){
+					for (let key in result.value){
+						playerJson[player]['Contributions'][key] += result["value"][key];
+					}
+				}
+			})
+		});
 	}
-	for (let k in playerJson) {
-		console.log(k);
-		console.log(playerJson[k]['Games'].length);
-	}
+	return playerJson;
 }
 
 // Get Progress to Achilles
@@ -101,8 +143,8 @@ const getAchillesProg = async (commendations, milestone = 'helmet') => {
 	}
 
 	// filter only to relevant Achilles commendations
-	for (i = 0; i < achillesCommendations.length; i++) {
-		let achillesComm = achillesCommendations[i];
+	for (i = 0; i < static_things.achillesCommendations.length; i++) {
+		let achillesComm = static_things.achillesCommendations[i];
 		// Our metadata uses names as keys; this is to keep track of id -> name mappings; used later
 		nameIdMap[company_metadata[achillesComm]['id']] = achillesComm;
 		requiredCommendations.push(commendations['ProgressiveCommendations'].filter(item => item.Id == company_metadata[achillesComm]['id'])[0]);
@@ -128,7 +170,6 @@ const getAchillesProg = async (commendations, milestone = 'helmet') => {
 			completedCommendations.push(data);
 		}
 	};
-	console.log(neededCommendations.length);
 	return {'neededCommendations': neededCommendations, 'completedCommendations': completedCommendations};
 };
 

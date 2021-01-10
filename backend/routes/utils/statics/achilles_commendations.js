@@ -32,6 +32,26 @@ let achillesCommendations = [
 	"Deconstructed",
 ];
 
+let achillesStats = {
+	"TotalKills":			"No Hard Feelings",
+	"TotalPowerWeaponKills":	"Power play",
+}
+
+let achillesCommDeltas = {
+	'61217e0a-832e-487b-9f3b-51b36a6803c7':		"Standard Issue", 	// Assault Rifle
+	'6d0d92dc-59a8-430c-9cd1-9e024e35a514':		"Standard Issue", 	// Battle Rifle
+	'c9bcb904-607f-42ea-acae-4cbdcdf65143':		"Standard Issue", 	// DMR
+	'f33f1aec-59ad-47eb-be13-fd0e654a53aa':		"Standard Issue", 	// Pistol
+	'3c357b49-4860-48b7-9d92-dfdfd9931b49':		"Standard Issue", 	// SMG
+	'd3e8e2da-8e7c-4655-b238-d57db7bc9836':		"Road Trip", 		// Warthog
+	'c41eb798-ca34-4ff4-95a1-9a67f2a2ccd3':		"Road Trip", 		// Scorpion
+	'16dbe561-7201-4c76-9d71-e6c27945e554':		"Road Trip", 		// Ghost
+	'71e867d7-51dc-484a-936e-33c8efb5a219':		"Road Trip", 		// Wraith
+	'29a3be6c-94ec-41df-8af9-0ca8a6a69854':		"It's a bird!", 	// Banshee
+	'bc117d2a-44ea-4464-a846-557d8a36551e':		"It's a bird!", 	// Wasp
+	'6fd87bf0-a3c8-47f6-af0a-6523fafdf75d':		"It's a bird!", 	// Phaeton
+}
+
 let achillesMedals = {
 	2287626681:	"Sting like a bee", 		// Melee Kill
 	1219497744: 	"Grand Theft", 			// Hijack
@@ -58,18 +78,13 @@ let achillesMedals = {
 	370413844: 	"I'm just perfect",		// Perfect Kill - DMR
 	3653057799: 	"I'm just perfect",		// Perfect Kill - Magnum
 	4204396686: 	"Forgot to pay the toll",	// Buckle Up
-	//        :	"Standard Issue",		Standard Issue is different - requires tracking commendations, not medals
-	//        :	"It's a bird!",			It's a bird! is different - requires tracking commendations, not medals
 	2093481574: 	"Till someone loses an eye",	// Snipeltaneous
 	3486286344: 	"Till someone loses an eye",	// Airborne Snapshot
 	1986137636: 	"Till someone loses an eye",	// Snapshot
 	848240062: 	"Till someone loses an eye",	// Sniper Headshot
 	3676723563: 	"Lawnmower",			// Splatter 
-	//	  : 	"No Hard Feelings",		No Hard Feelings is different - Tracked by spartan kills 
 	3344421840: 	"Look ma no pin",		// Grenade Kill 
 	298813630: 	"The Pain Train",		// Spartan Charge 
-	//	  : 	"Road Trip",			Road Trip is different - Tracked by commendations, not medals
-	//	  : 	"Power play",			Power player is different - Tracked by power weapon kills
 	492192256: 	"From the top rope",		// Ground Pound 
 	2966496172: 	"So cuddly",			// Assassination 
 	3001183151:	"First Strike",			// First Strike
@@ -88,13 +103,13 @@ let achillesMedals = {
 	882267095:	"From Downtown",		// Spray N' Pray
 	281002471:	"Not so fast",			// Busted
 	2838259753:	"Body Guard",			// Protector
-	2955425834:	"Can't we get along",		// Elite Kill
-	3324603383:	"Can't we get along",		// Grunt Kill
-	1862589993:	"Can't we get along",		// Jackal Kill
+	2955425834:	"Can't we get along?",		// Elite Kill
+	3324603383:	"Can't we get along?",		// Grunt Kill
+	1862589993:	"Can't we get along?",		// Jackal Kill
 	519459233:	"Deconstructed",		// Watcher Kill
 	2947060439:	"Deconstructed",		// Crawler Kill
 	1311847356:	"Deconstructed",		// Knight Kill
 	3344008582:	"Deconstructed",		// Soldier Kill
 };
 
-module.exports = { achillesCommendations, achillesMedals };
+module.exports = { achillesCommendations, achillesMedals, achillesStats, achillesCommDeltas };
