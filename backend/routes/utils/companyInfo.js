@@ -1,13 +1,7 @@
-const axios = require('axios');
+const axios = require('../../utils/axios-helper');
 const achillesCommendations = require('./statics/achilles_commendations');
 const company_metadata = require('./metadata/halo_company_comm_metadata.json');
 const halo_api = "https://www.haloapi.com";
-const api_key = require('../../config').haloApiKey;
-
-axios.defaults.headers = {
-	'Content-Type': 'application/json',
-	'Ocp-Apim-Subscription-Key': api_key
-};
 
 const getCustomComm = async () => {
 	// TODO: Placeholder for custom commendations we may add
@@ -24,10 +18,8 @@ const getPlayerGames = async (player,increment=0,validGames=[]) => {
                 return res.data;
         })
         .catch( error => {
-		console.log("error")
                 return error;
         });
-
 
 	// Filter only games that occurred within previous week
 	let counter = 0;
@@ -37,8 +29,6 @@ const getPlayerGames = async (player,increment=0,validGames=[]) => {
 		let sevenDaysAgo = d.setDate(d.getDate() - 7);
 		sevenDaysAgo = new Date(sevenDaysAgo).toISOString();
 		if (new Date(candidate.MatchCompletedDate.ISO8601Date) > new Date(sevenDaysAgo)){
-			console.log(player)
-			console.log(new Date(candidate.MatchCompletedDate.ISO8601Date))
 			validGames.push(candidate);
 			counter++;
 		}
@@ -51,14 +41,53 @@ const getPlayerGames = async (player,increment=0,validGames=[]) => {
 	}
 }
 
+// Return match results 
+const getMatchResults = async (game) => {
+	if (game.Id.GameMode == 1) {
+		return await axios.get(`${halo_api}/stats/h5/arena/matches/${game.Id.MatchId}`)
+		.then (res => {
+			return res.data;
+		})
+		.catch(error => {
+			return error
+		})
+	} else if (game.Id.GameMode == 4) {
+		return await axios.get(`${halo_api}/stats/h5/warzone/matches/${game.Id.MatchId}`)
+		.then (res => {
+			return res.data;
+		})
+		.catch(error => {
+			return error;
+		})
+	
+	} else {
+		return {}
+	}
+}
+
+// Return JSON object of how much contribution a player has made in a game towards achilles commendations
+const getGameContribs = async (game,player) => {
+	//Placeholder
+	//For every medal earned by player
+	//	For every achilles commendation
+	//		if player medal contributes to commendation
+	//			increment count by 1 or init to 1
+	//Return JSON of counts
+}
+
+// Return JSON object of player contributions
 const getPlayerContribs = async (players) => {
 	let playerJson = {};
 	for (i = 0; i < players.length; i++){
-		console.log(i)
 		let player = players[i].Player.Gamertag;
 		let playerGames = await getPlayerGames(player);
+		console.log(playerGames)
+		playerJson[player] = {'Games': playerGames};
 	}
-
+	for (let k in playerJson) {
+		console.log(k);
+		console.log(playerJson[k]['Games'].length);
+	}
 }
 
 // Get Progress to Achilles
