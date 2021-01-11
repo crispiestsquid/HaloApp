@@ -2,6 +2,7 @@ const axios = require('../../utils/axios-helper');
 const company_metadata = require('./metadata/halo_company_comm_metadata.json');
 const halo_api = "https://www.haloapi.com";
 const static_things = require('./statics/achilles_commendations');
+const playerImageUtils = require('./playerImage');
 
 const getCustomComm = async () => {
 	// TODO: Placeholder for custom commendations we may add
@@ -196,8 +197,29 @@ const getCompanyInfo = async (gamertag, company_id = null) => {
 		company_id = data.Company.Id;
 	}
 	let response = await axios.get(`${halo_api}/stats/h5/companies/${company_id}`)
-	.then(res => {
-		return res.data;
+	.then(async res => {
+		let gamertags = [];
+		res.data.Members.forEach(member => {
+			gamertags.push(member.Player.Gamertag);
+		});
+		console.log('Gamertags', gamertags);
+        let emblemUrls = await playerImageUtils.getMultipleEmblems(gamertags);
+		console.log(emblemUrls);
+		let membersWithEmblems = res.data.Members.map(member => {
+			let url = emblemUrls.filter(obj => obj.gamertag === member.Player.Gamertag)[0].emblemUrl;
+			return {
+				...member,
+				Player: {
+					...member.Player,
+					EmblemUrl: url
+				}
+			}
+		});
+		let newData = {
+			...res.data,
+			Members: membersWithEmblems
+		};
+		return newData;
 	})
 	.catch(error => {
 		return error;

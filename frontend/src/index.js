@@ -4,13 +4,13 @@ import 'bootstrap/dist/css/bootstrap.css';
 import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
-import { Provider } from 'jotai';
+import { RecoilRoot } from 'recoil';
 
 ReactDOM.render(
 	<React.StrictMode>
-		<Provider>
+		<RecoilRoot>
 			<App />
-		</Provider>
+		</RecoilRoot>
 	</React.StrictMode>,
 	document.getElementById('root')
 );
