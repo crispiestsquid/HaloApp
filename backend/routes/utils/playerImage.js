@@ -1,11 +1,5 @@
-const axios = require('axios');
+const axios = require('../../utils/axios-helper');
 const halo_api = "https://www.haloapi.com";
-const api_key = require('../../config').haloApiKey;
-
-axios.defaults.headers = {
-	'Content-Type': 'application/json',
-	'Ocp-Apim-Subscription-Key': api_key
-};
 
 // Get Player Emblem from Gamertag
 const getEmblem = async (gamertag, size = null) => {

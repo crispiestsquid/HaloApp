@@ -1,13 +1,8 @@
-const axios = require('axios');
-const achillesCommendations = require('./statics/achilles_commendations');
+const axios = require('../../utils/axios-helper');
 const company_metadata = require('./metadata/halo_company_comm_metadata.json');
 const halo_api = "https://www.haloapi.com";
-const api_key = require('../../config').haloApiKey;
-
-axios.defaults.headers = {
-	'Content-Type': 'application/json',
-	'Ocp-Apim-Subscription-Key': api_key
-};
+const static_things = require('./statics/achilles_commendations');
+const playerImageUtils = require('./playerImage');
 
 const getCustomComm = async () => {
 	// TODO: Placeholder for custom commendations we may add
@@ -16,6 +11,127 @@ const getCustomComm = async () => {
 const getCustomMetadata = async () => {
 	// TODO: Placeholder for custom metadata we may add
 };
+
+// Return list of games in the past week
+const getPlayerGames = async (player,increment=0,validGames=[]) => {
+	let response = await axios.get(`${halo_api}/stats/h5/players/${player}/matches?modes=arena,warzone&include-times=true&start=${increment}`)
+        .then (res => {
+                return res.data;
+        })
+        .catch( error => {
+                return error;
+        });
+
+	// Filter only games that occurred within previous week
+	let counter = 0;
+	for (j = 0; j < response.Results.length; j++){
+		candidate = response.Results[j]
+		let d = new Date();
+		let sevenDaysAgo = d.setDate(d.getDate() - 7);
+		sevenDaysAgo = new Date(sevenDaysAgo).toISOString();
+		if (new Date(candidate.MatchCompletedDate.ISO8601Date) > new Date(sevenDaysAgo)){
+			validGames.push(candidate);
+			counter++;
+		}
+	}
+	// Can only grab 25 games at a time; Keep checking until all valid games are examined (i.e. less than 25 are returned)
+	if (counter == 25){
+		return getPlayerGames(player,increment+25,validGames);
+	} else {
+		return validGames;
+	}
+}
+
+// Return match results 
+const getMatchResults = async (game) => {
+	if (game.Id.GameMode == 1) {
+		return await axios.get(`${halo_api}/stats/h5/arena/matches/${game.Id.MatchId}`)
+		.then (res => {
+			return res.data;
+		})
+		.catch(error => {
+			return error
+		})
+	} else if (game.Id.GameMode == 4) {
+		return await axios.get(`${halo_api}/stats/h5/warzone/matches/${game.Id.MatchId}`)
+		.then (res => {
+			return res.data;
+		})
+		.catch(error => {
+			return error;
+		})
+	
+	} else {
+		return "error"
+	}
+}
+
+// Return JSON object of how much contribution a player has made in a game towards achilles commendations
+const getGameContribs = async (game,player) => {
+	let matchResults = await getMatchResults(game);
+	matchResults = matchResults.PlayerStats;
+	// Filter results to just target player
+	let playerResults = matchResults.reduce((total,currentPlayer) => {
+		if (currentPlayer.Player.Gamertag == player) {
+			return currentPlayer;
+		};
+		return total
+	});
+
+	// Initialize dictionary
+	let localAchilles = {}
+	static_things.achillesCommendations.forEach((item) => { localAchilles[item] = 0});
+
+	// Get achilles contribution by medals
+	playerResults["MedalAwards"].forEach((medal) => {
+		if (medal.MedalId in static_things.achillesMedals){
+			localAchilles[static_things.achillesMedals[medal.MedalId]] += medal['Count'];
+		}
+	});
+
+	// Get achilles contribution by stats
+	for (let key in static_things.achillesStats){
+		localAchilles[static_things.achillesStats[key]] += playerResults[key]
+	};
+
+	//// Get achilles contribution by commendations
+	playerResults["ProgressiveCommendationDeltas"].forEach((delta) => {
+		if (delta.Id in static_things.achillesCommDeltas){
+			localAchilles[static_things.achillesCommDeltas[delta.Id]] += delta["Progress"] - delta["PreviousProgress"];
+		}
+	});
+	
+	return localAchilles;
+}
+
+// Return JSON object of player contributions
+const getPlayerContribs = async (players) => {
+	let playerJson = {};
+	for (i = 0; i < players.length; i++){
+		let player = players[i].Player.Gamertag;
+		let playerGames = await getPlayerGames(player);
+		playerJson[player] = {'Games': playerGames};
+		playerJson[player]['Contributions'] = {};
+		// initialize playerContributions dictionary
+		static_things.achillesCommendations.forEach((item) => { playerJson[player]['Contributions'][item] = 0});
+		gameCalls = []
+		playerGames.forEach(game => { 
+			gameCalls.push(getGameContribs(game,player));
+		});
+
+		await Promise.allSettled(gameCalls)
+		.then(results => {
+			results.forEach((result) => {
+				if (result.status === "fulfilled"){
+					for (let key in result.value){
+						playerJson[player]['Contributions'][key] += result["value"][key];
+					}
+				}
+			})
+		});
+	}
+	return playerJson;
+}
 
 // Get Progress to Achilles
 const getAchillesProg = async (commendations, milestone = 'helmet') => {
@@ -28,8 +144,8 @@ const getAchillesProg = async (commendations, milestone = 'helmet') => {
 	}
 
 	// filter only to relevant Achilles commendations
-	for (i = 0; i < achillesCommendations.length; i++) {
-		let achillesComm = achillesCommendations[i];
+	for (i = 0; i < static_things.achillesCommendations.length; i++) {
+		let achillesComm = static_things.achillesCommendations[i];
 		// Our metadata uses names as keys; this is to keep track of id -> name mappings; used later
 		nameIdMap[company_metadata[achillesComm]['id']] = achillesComm;
 		requiredCommendations.push(commendations['ProgressiveCommendations'].filter(item => item.Id == company_metadata[achillesComm]['id'])[0]);
@@ -55,7 +171,6 @@ const getAchillesProg = async (commendations, milestone = 'helmet') => {
 			completedCommendations.push(data);
 		}
 	};
-	console.log(neededCommendations.length);
 	return {'neededCommendations': neededCommendations, 'completedCommendations': completedCommendations};
 };
 
@@ -82,8 +197,29 @@ const getCompanyInfo = async (gamertag, company_id = null) => {
 		company_id = data.Company.Id;
 	}
 	let response = await axios.get(`${halo_api}/stats/h5/companies/${company_id}`)
-	.then(res => {
-		return res.data;
+	.then(async res => {
+		let gamertags = [];
+		res.data.Members.forEach(member => {
+			gamertags.push(member.Player.Gamertag);
+		});
+		console.log('Gamertags', gamertags);
+        let emblemUrls = await playerImageUtils.getMultipleEmblems(gamertags);
+		console.log(emblemUrls);
+		let membersWithEmblems = res.data.Members.map(member => {
+			let url = emblemUrls.filter(obj => obj.gamertag === member.Player.Gamertag)[0].emblemUrl;
+			return {
+				...member,
+				Player: {
+					...member.Player,
+					EmblemUrl: url
+				}
+			}
+		});
+		let newData = {
+			...res.data,
+			Members: membersWithEmblems
+		};
+		return newData;
 	})
 	.catch(error => {
 		return error;
@@ -103,4 +239,4 @@ const getCompany = async gamertag => {
 	return response;
 };
 
-module.exports = { getCompany, getCompanyInfo, getCompanyComm, getAchillesProg };
+module.exports = { getCompany, getCompanyInfo, getCompanyComm, getAchillesProg, getPlayerContribs };
