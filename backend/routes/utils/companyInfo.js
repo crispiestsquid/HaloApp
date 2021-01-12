@@ -8,10 +8,6 @@ const getCustomComm = async () => {
 	// TODO: Placeholder for custom commendations we may add
 };
 
-const getCustomMetadata = async () => {
-	// TODO: Placeholder for custom metadata we may add
-};
-
 // Return list of games in the past week
 const getPlayerGames = async (player,increment=0,validGames=[]) => {
 	let response = await axios.get(`${halo_api}/stats/h5/players/${player}/matches?modes=arena,warzone&include-times=true&start=${increment}`)
