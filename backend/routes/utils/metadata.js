@@ -70,4 +70,37 @@ const getSpartanCommMeta = async () => {
 	return formatted_dict;
 }
 
-module.exports = { getCompCommMeta };
+// Return formatted JSON object from Halo API with id as keys
+// Ex: 		    "1638349322": {
+//       		 "name": "Carrier Protected",
+//       		 "description": "Save your Oddball carrier by killing his attacker",
+//       		 "classification": "Oddball",
+//       		 "difficulty": 0,
+//       		 "spriteLocation": {
+//       		     "spriteSheetUri": "https://content.halocdn.com/media/Default/games/halo-5-guardians/sprites/medals_10-26-17-1ed917479dd14818b09ef10e29ff60b1.png",
+//       		     "left": 518,
+//       		     "top": 148,
+//       		     "width": 74,
+//       		     "height": 74,
+//       		     "spriteWidth": 2048,
+//       		     "spriteHeight": 1024
+//       		 },
+//       		 "id": "1638349322",
+//       		 "contentId": "84f70f06-8336-4323-9fc3-b914139b8c7a"
+const getSpartanMedalMeta = async () => {
+        let response = await axios.get(`${halo_api}/metadata/h5/metadata/medals`)
+        .then (res => {
+                return res.data;
+        })
+        .catch( error => {
+                return error;
+        })
+        let formatted_dict = {};
+        response.forEach( (commendation) => {
+                formatted_dict[commendation.id] = commendation;
+        })
+
+        return formatted_dict;
+}
+
+module.exports = { getCompCommMeta,getSpartanCommMeta,getSpartanMedalMeta };
