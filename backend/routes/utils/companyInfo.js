@@ -153,7 +153,6 @@ const getAchillesProg = async (commendations, database, milestone = 'helmet') =>
 	for (i = 0; i < requiredCommendations.length; i++) {
 		let comm = requiredCommendations[i];
 		let achillesComm = totalAchillesMeta.filter(medal => medal.id == comm.Id)[0]
-		console.log(achillesComm)
 		// Curate our returned data somewhat; Ignore levels of commendations
 		let data = {
 			"Name": achillesComm.name,
