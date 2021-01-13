@@ -1,8 +1,8 @@
 const axios = require('../../utils/axios-helper');
-const company_metadata = require('./metadata/halo_company_comm_metadata.json');
 const halo_api = "https://www.haloapi.com";
 const static_things = require('./statics/achilles_commendations');
 const playerImageUtils = require('./playerImage');
+const metadataUtils = require('./metadata');
 
 const getCustomComm = async () => {
 	// TODO: Placeholder for custom commendations we may add
@@ -130,7 +130,7 @@ const getPlayerContribs = async (players) => {
 }
 
 // Get Progress to Achilles
-const getAchillesProg = async (commendations, milestone = 'helmet') => {
+const getAchillesProg = async (commendations, database, milestone = 'helmet') => {
 	let requiredCommendations = [];
 	let nameIdMap = {};
 	let offset = 1;
@@ -139,12 +139,12 @@ const getAchillesProg = async (commendations, milestone = 'helmet') => {
 		offset = 3;
 	}
 
+	let totalAchillesMeta = await metadataUtils.getCompCommMeta(database);
 	// filter only to relevant Achilles commendations
 	for (i = 0; i < static_things.achillesCommendations.length; i++) {
-		let achillesComm = static_things.achillesCommendations[i];
-		// Our metadata uses names as keys; this is to keep track of id -> name mappings; used later
-		nameIdMap[company_metadata[achillesComm]['id']] = achillesComm;
-		requiredCommendations.push(commendations['ProgressiveCommendations'].filter(item => item.Id == company_metadata[achillesComm]['id'])[0]);
+		let achillesCommName = static_things.achillesCommendations[i];
+		let ourMeta = totalAchillesMeta.filter(medal => medal.name == achillesCommName)[0]
+		requiredCommendations.push(commendations['ProgressiveCommendations'].filter(item => item.Id == ourMeta['id'])[0]);
 	}
 
 	// Separate completed commendations and still needed
@@ -152,11 +152,11 @@ const getAchillesProg = async (commendations, milestone = 'helmet') => {
 	let neededCommendations = [];
 	for (i = 0; i < requiredCommendations.length; i++) {
 		let comm = requiredCommendations[i];
-		let commName = nameIdMap[comm.Id];
-		let achillesComm = company_metadata[commName];
+		let achillesComm = totalAchillesMeta.filter(medal => medal.id == comm.Id)[0]
+		console.log(achillesComm)
 		// Curate our returned data somewhat; Ignore levels of commendations
 		let data = {
-			"Name": commName,
+			"Name": achillesComm.name,
 			"Progress": comm.Progress,
 			"Id": comm.Id,
 			"Threshold": achillesComm.levels[achillesComm.levels.length - offset].threshold
