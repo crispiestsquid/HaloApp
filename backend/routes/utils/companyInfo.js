@@ -9,7 +9,7 @@ const getCustomComm = async () => {
 };
 
 // Return list of games in the past week
-const getPlayerGames = async (player,increment=0,validGames=[]) => {
+const getPlayerGames = async (player,cutoff,increment=0,validGames=[]) => {
 	let response = await axios.get(`${halo_api}/stats/h5/players/${player}/matches?modes=arena,warzone&include-times=true&start=${increment}`)
         .then (res => {
                 return res.data;
@@ -22,17 +22,14 @@ const getPlayerGames = async (player,increment=0,validGames=[]) => {
 	let counter = 0;
 	for (j = 0; j < response.Results.length; j++){
 		candidate = response.Results[j]
-		let d = new Date();
-		let sevenDaysAgo = d.setDate(d.getDate() - 7);
-		sevenDaysAgo = new Date(sevenDaysAgo).toISOString();
-		if (new Date(candidate.MatchCompletedDate.ISO8601Date) > new Date(sevenDaysAgo)){
+		if (new Date(candidate.MatchCompletedDate.ISO8601Date).toISOString() > new Date(cutoff).toISOString()){
 			validGames.push(candidate);
 			counter++;
 		}
 	}
 	// Can only grab 25 games at a time; Keep checking until all valid games are examined (i.e. less than 25 are returned)
 	if (counter == 25){
-		return getPlayerGames(player,increment+25,validGames);
+		return getPlayerGames(player,cutoff,increment+25,validGames);
 	} else {
 		return validGames;
 	}
@@ -101,32 +98,68 @@ const getGameContribs = async (game,player) => {
 }
 
 // Return JSON object of player contributions
-const getPlayerContribs = async (players) => {
+const getPlayerContribs = async (companyInfo, database) => {
+	let company = companyInfo['Name'];
+	let players = companyInfo['Members'];
+	await clearGames(company,database);
+	let collectionName = "companyHistory"+company;
+	let collection = database.collection(collectionName);
 	let playerJson = {};
-	for (i = 0; i < players.length; i++){
+	for (i = 65; i < players.length; i++){
 		let player = players[i].Player.Gamertag;
-		let playerGames = await getPlayerGames(player);
-		playerJson[player] = {'Games': playerGames};
-		playerJson[player]['Contributions'] = {};
-		// initialize playerContributions dictionary
-		static_things.achillesCommendations.forEach((item) => { playerJson[player]['Contributions'][item] = 0});
-		gameCalls = []
-		playerGames.forEach(game => { 
-			gameCalls.push(getGameContribs(game,player));
+		console.log(player)
+		// Check for existing games by player in our db
+		let cursor = await collection.find({'gamertag':player})
+		let existingGames = cursor.toArray();
+		console.log("Existing Games: "+existingGames.length)
+		let d = new Date();
+		// Default cutoff time to 7 days ago
+		let timeAfter = d.setDate(d.getDate() - 7);
+		if (existingGames.length > 0){
+			let mostRecentGame = existingGames.sort((a,b) => (Date(a.ISO8601Date).toISOString() > Date(b.ISO8601Date).toISOString()) ? 1:-1)[existingGames.length-1];
+			// Update time to most recent game
+			timeAfter = Date(mostRecentGame.ISO8601Date).toISOString();
+		}
+
+		// Get player games after timeAfter; insert into db
+		let playerGames = await getPlayerGames(player,timeAfter);
+		console.log("New games: "+playerGames.length);
+		playerGames.forEach(async (game) => { 
+			let playerDoc = {};
+			playerDoc['gamertag'] = player
+			playerDoc['ISO8601Date'] = Date(game.MatchCompletedDate.ISO8601Date)
+			playerDoc['gameId'] = game.Id.MatchId;
+			playerDoc['contributions'] = await getGameContribs(game,player);
+			await collection.insertOne(playerDoc);
+			console.log("inserted")
 		});
 
-		await Promise.allSettled(gameCalls)
-		.then(results => {
-			results.forEach((result) => {
-				if (result.status === "fulfilled"){
-					for (let key in result.value){
-						playerJson[player]['Contributions'][key] += result["value"][key];
-					}
+		// Get contributions from our db
+                cursor = await collection.find({'gamertag':player})
+                existingGames = cursor.toArray();
+		playerJson[player] = {'Contributions':{}};
+		static_things.achillesCommendations.forEach((item) => { playerJson[player]['Contributions'][item] = 0});
+		if (existingGames.length > 0){
+			existingGames.forEach((game) => {
+				for (let key in game['contributions'].value){ 
+					playerJson[player]['Contributions'][key] += game['contributions'][key];
 				}
 			})
-		});
+		} 
 	}
+	console.log(playerJson)
+
 	return playerJson;
+}
+
+// Remove games over a week old from collection
+const clearGames = async (company,database) => {
+	let d = new Date();
+	let collectionName = "companyHistory"+company;
+	let collection = database.collection(collectionName);
+	let sevenDaysAgo = d.setDate(d.getDate() - 7);
+	let query = {'ISO8601Date':{$lte:sevenDaysAgo}};
+	await collection.deleteMany(query);
 }
 
 // Get Progress to Achilles
@@ -192,34 +225,35 @@ const getCompanyInfo = async (gamertag, company_id = null) => {
 		company_id = data.Company.Id;
 	}
 	let response = await axios.get(`${halo_api}/stats/h5/companies/${company_id}`)
-	.then(async res => {
-		let gamertags = [];
-		res.data.Members.forEach(member => {
-			gamertags.push(member.Player.Gamertag);
-		});
-		console.log('Gamertags', gamertags);
-        let emblemUrls = await playerImageUtils.getMultipleEmblems(gamertags);
-		console.log(emblemUrls);
-		let membersWithEmblems = res.data.Members.map(member => {
-			let url = emblemUrls.filter(obj => obj.gamertag === member.Player.Gamertag)[0].emblemUrl;
-			return {
-				...member,
-				Player: {
-					...member.Player,
-					EmblemUrl: url
-				}
-			}
-		});
-		let newData = {
-			...res.data,
-			Members: membersWithEmblems
-		};
-		return newData;
-	})
-	.catch(error => {
-		return error;
-	});
-	return response;
+	return response.data
+//	.then(async res => {
+//		let gamertags = [];
+//		res.data.Members.forEach(member => {
+//			gamertags.push(member.Player.Gamertag);
+//		});
+//		console.log('Gamertags', gamertags);
+//        let emblemUrls = await playerImageUtils.getMultipleEmblems(gamertags);
+//		console.log(emblemUrls);
+//		let membersWithEmblems = res.data.Members.map(member => {
+//			let url = emblemUrls.filter(obj => obj.gamertag === member.Player.Gamertag)[0].emblemUrl;
+//			return {
+//				...member,
+//				Player: {
+//					...member.Player,
+//					EmblemUrl: url
+//				}
+//			}
+//		});
+//		let newData = {
+//			...res.data,
+//			Members: membersWithEmblems
+//		};
+//		return newData;
+//	})
+//	.catch(error => {
+//		return error;
+//	});
+//	return response;
 };
 
 // Get Company Object based on a Gamertag
